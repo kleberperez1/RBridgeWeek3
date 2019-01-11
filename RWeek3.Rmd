@@ -1,0 +1,171 @@
+---
+title: "AAPL, GOOGL, MSFT STOCKS TIME SERIES"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: [ "twitter", "facebook", "menu" ]
+    #source_code: embed
+    vertical_layout: fill
+    navbar:
+      - { title: "Storyboard", href: "http://rpubs.com/kleberperez/454744", 
+      target: _blank , align: left } 
+      - { title: "HealthData.gov", href: "http://rpubs.com/kleberperez/454603", 
+      target: _blank , align: left } 
+      - { title: "About Kleber Perez", href: "https://www.linkedin.com/in/kleberperez/", 
+      target: _blank , align: left }
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(quantmod)
+library(ggplot2)
+library(tidyr)
+library(plyr)
+library(dygraphs)
+library(DT)
+library(tidyquant)
+library(lubridate)
+tickers <- c("AAPL", "GOOGL", "MSFT")
+```
+
+```{r,message=FALSE, include=FALSE}
+getSymbols(tickers, src = 'yahoo', from = '2014-01-01', to = '2019-01-31')
+StockPrices <- do.call(merge, lapply(tickers, function(x) Cl(get(x))))
+dateperiod <- c("2014-01-01", "2019-01-31")
+```
+
+column 
+-----------------------------------------------------------------------
+
+### Stocks Price
+
+```{r}
+#dygraph(StockPrices, main = "Stock Prices", group = "Stock") %>%
+#    dyAxis("y", label = "USD") %>%
+#  dyAxis("x", label = "Time") %>%
+#  dyOptions(axisLineWidth = 1.0,  colors = RColorBrewer::brewer.pal(3, "Set2")) %>%
+#  dyHighlight(highlightSeriesBackgroundAlpha = 2.0,
+#              highlightSeriesOpts = list(strokeWidth = 3)) %>%
+#  dyRangeSelector(height = 10)
+
+dygraph(StockPrices) %>%
+  dyAxis("y", label = "USD") %>%
+  dyOptions(colors = RColorBrewer::brewer.pal(3, "Set2"))
+```
+
+### Summary
+
+```{r}
+summary(StockPrices)
+```   
+
+
+Row 
+-------------------------------------
+
+### Factors
+ 
+```{r fig.width=5, fig.height=5}
+what_metrics <- yahooQF(c("Price/Sales", 
+                          "P/E Ratio",
+                          "Price/EPS Estimate Next Year",
+                          "PEG Ratio",
+                          "Dividend Yield", 
+                          "Market Capitalization"))
+
+metrics <- getQuote(paste(tickers, sep = "", collapse = ";"),what = what_metrics)
+metrics <- data.frame(Symbol = tickers, metrics[, 2:length(metrics)])
+colnames(metrics) <- c("Symbol", "P-E Ratio", "Price EPS Estimate Next Year", "Div Yield", "Market Cap")
+#DT::datatable(metrics)
+knitr::kable(metrics)
+```
+
+### Closing
+ 
+```{r fig.width = 5, fig.height = 5}
+#summary(StockPrices)
+knitr::kable(StockPrices)
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+### Important Discoveries / Year
+
+```{r}
+# dygraph(StockPrices, group = "Stock") %>%
+#   dyAxis("y", label = "Discoveries / Year") %>%
+#   dyOptions(colors = RColorBrewer::brewer.pal(3, "Set2")) %>%
+#   dyRangeSelector(height = 10)
+
+# getSymbols(tickers, src = 'yahoo', from = '2018-01-01', to = '2019-01-01')
+# StockPrices <- do.call(merge, lapply(tickers, function(x) Cl(get(x))))
+# dateperiod <- c("2018-01-01", "2019-01-01")
+
+tickers <- c("AAPL", "GOOGL", "MSFT")
+cat(getSymbols(tickers), "\n")
+closePrices <- do.call(merge, lapply(tickers, function(x) Cl(get(x))))
+dateWindow <- c("2018-01-01", "2019-01-31")
+
+dygraph(closePrices, group = "stock") %>%
+  dyRebase(value = 100) %>%
+  dyRangeSelector(dateWindow = dateWindow)
+
+dygraph(closePrices, main = "Percent", group = "stock") %>%
+  dyRebase(percent = TRUE) %>%
+  dyRangeSelector(dateWindow = dateWindow)
+
+dygraph(closePrices, main = "None", group = "stock") %>%
+  dyRangeSelector(dateWindow = dateWindow)
+
+dygraph(closePrices) %>% 
+dyShading(from = "2018-3-1", to = "2018-5-1", color = "#FFE6E6") %>%
+  dyShading(from = "2018-8-1", to = "2018-10-1", color = "#CCEBD6")
+```
+
+### Factors
+ 
+```{r fig.width=5, fig.height=5}
+what_metrics <- yahooQF(c("Price/Sales", 
+                          "P/E Ratio",
+                          "Price/EPS Estimate Next Year",
+                          "PEG Ratio",
+                          "Dividend Yield", 
+                          "Market Capitalization"))
+
+metrics <- getQuote(paste(tickers, sep = "", collapse = ";"),what = what_metrics)
+metrics <- data.frame(Symbol = tickers, metrics[, 2:length(metrics)])
+colnames(metrics) <- c("Symbol", "P-E Ratio", "Price EPS Estimate Next Year", "Div Yield", "Market Cap")
+#DT::datatable(metrics)
+knitr::kable(metrics)
+```
+
+
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+> **CONTENT**
+
+***
+1. Stock price:
+  <br /> Google's stock price steadily rised in the past 5 years. 
+  + The Apple and Microsoft have been steady growing trends. 
+  + However, Microsoft has the lowest price.
+  
+2. Key factors:
+  + Microsoft has the largest market cap while Apple has the smaller market cap.
+  + Apple has the lowest EPS estimated next year.
+  + Microsoft has the highest PE ratio while Apple has the lowest PE ratio.
+
+3. Stock volume:
+  + Microsoft has the lowest trading volume among the stocks.
+ 
+4. From bollinger bands:
+  + Apple has a big drop in last December while Microsoft is relative stable recently. 
+ 
+In conclusion, Microsoft is the stock to choose. 
+  + It has the highest stock return.
+  + It has a steady trading volume.
